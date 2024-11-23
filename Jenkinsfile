@@ -40,12 +40,12 @@ pipeline {
         stage('Deploy Golang to DEV') {
             steps {
                 echo 'Deploying to DEV...'
-                sh 'docker image pull trong19/golangserver:latest'
+                sh 'docker image pull trong19/golangserver:golang'
                 sh 'docker container stop golang-jenkins || echo "this container does not exist"'
                 sh 'docker network create dev || echo "this network exists"'
                 sh 'echo y | docker container prune '
 
-                sh 'docker container run -d --rm --name server-golang -p 4000:3000 --network dev trong19/golangserver:latest'
+                sh 'docker container run -d --rm --name server-golang -p 4000:3000 --network dev trong19/golangserver:golang'
             }
         }
     }
