@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'trong19/golangserver'
-        DOCKER_TAG = 'latest'
+        DOCKER_TAG = 'golang'
     }
 
     stages {
