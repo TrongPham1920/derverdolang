@@ -16,7 +16,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", "-f Dockerfile .")
                 }
             }
         }
@@ -41,10 +41,9 @@ pipeline {
             steps {
                 echo 'Deploying to DEV...'
                 sh 'docker image pull trong19/golangserver:golang'
-                sh 'docker container stop golang-jenkins || echo "this container does not exist"'
-                sh 'docker network create dev || echo "this network exists"'
-                sh 'echo y | docker container prune '
-
+                sh 'docker container stop golang-jenkins -f || echo "this container does not exist"'
+                sh 'docker network inspect dev || docker network create dev'
+                sh 'docker container prune -f'
                 sh 'docker container run -d --rm --name server-golang -p 4000:3000 --network dev trong19/golangserver:golang'
             }
         }
