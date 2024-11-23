@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'trong19/ci_cd_02'
+        DOCKER_IMAGE = 'trong19/golangserver'
         DOCKER_TAG = 'latest'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/TrongPham1920/CA_CD_02.git'
+                git branch: 'main', url: 'https://github.com/TrongPham1920/derverdolang.git'
             }
         }
 
