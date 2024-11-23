@@ -4,19 +4,21 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'trong19/golangserver'
         DOCKER_TAG = 'golang'
+
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/TrongPham1920/derverdolang.git'
+                 git branch: 'main', url: 'https://github.com/TrongPham1920/derverdolang.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    echo 'Building Docker image for linux/amd64 platform...'
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", "--platform linux/amd64 .")
                 }
             }
         }
@@ -39,13 +41,39 @@ pipeline {
 
         stage('Deploy Golang to DEV') {
             steps {
-                echo 'Deploying to DEV...'
-                sh 'docker image pull trongpham99/golang-jenkins:latest'
-                sh 'docker container stop golang-jenkins || echo "this container does not exist"'
-                sh 'docker network create dev || echo "this network exists"'
-                sh 'echo y | docker container prune '
+                script {
+                    echo 'Clearing server_golang-related images and containers...'
+                    sh '''
+                        docker container stop server-golang || echo "No container named server-golang to stop"
+                        docker container rm server-golang || echo "No container named server-golang to remove"
+                        docker image rm ${DOCKER_IMAGE}:${DOCKER_TAG} || echo "No image ${DOCKER_IMAGE}:${DOCKER_TAG} to remove"
+                    '''
+                    
+                    echo 'Deploying to DEV environment...'
+                    sh '''
+                        docker image pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker network create dev || echo "Network already exists"
+                        docker container run -d --rm --name server-golang -p 4000:4000 --network dev ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    '''
+                }
+            }
+        }
 
-                sh 'docker container run -d --rm --name server-golang -p 4000:3000 --network dev trongpham99/golang-jenkins:latest'
+        stage('Deploy to Production on AWS') {
+            steps {
+                script {
+                    echo 'Deploying to Production...'
+                    sshagent(['aws-ssh-key']) {
+                        sh '''
+                            ssh -o StrictHostKeyChecking=no ${PROD_USER}@${PROD_SERVER} << EOF
+                                docker container stop server-golang || echo "No container to stop"
+                                docker container rm server-golang || echo "No container to remove"
+                                docker image rm ${DOCKER_IMAGE}:${DOCKER_TAG} || echo "No image to remove"
+                                docker image pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                                docker container run -d --rm --name server-golang -p 4000:4000 ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        '''
+                    }
+                }
             }
         }
     }
