@@ -41,8 +41,13 @@ pipeline {
             steps {
                 echo 'Deploying to DEV...'
                 sh 'docker image pull trong19/golangserver:golang'
-                sh 'docker container stop golang-jenkins -f || echo "this container does not exist"'
-                sh 'docker network inspect dev || docker network create dev'
+                
+                // Dừng và xóa container cũ nếu tồn tại
+                sh 'docker container stop server-golang || echo "container does not exist"'
+                sh 'docker container rm server-golang || echo "container does not exist"'
+
+                // Tạo lại container mới
+                sh 'docker network create dev || echo "this network exists"'
                 sh 'docker container prune -f'
                 sh 'docker container run -d --rm --name server-golang -p 4000:3000 --network dev trong19/golangserver:golang'
             }
